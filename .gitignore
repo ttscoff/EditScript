@@ -3,3 +3,4 @@ html
 *.gem
 Gemfile.lock
 *.sublime*
+*.taskpaper

@@ -4,7 +4,7 @@
 module ExecAvaliable
   def self.included(base)
     @allowed_classes = [Array,String]
-    unless allowed_classes.include? base
+    unless @allowed_classes.include? base
       raise "ExecAvailable included in an unsupported class"
     end
     super
@@ -33,4 +33,6 @@ module ExecAvaliable
     # found == bins.length
     [matched.length==bins.length,missed]
   end
+
+  [Array,String].map {|c| c.send :include, self }
 end

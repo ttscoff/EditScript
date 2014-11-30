@@ -8,7 +8,7 @@ module EditScript
     def self.parse(args)
       defaults = {
         :editor => false, # $EDITSCRIPT_EDITOR
-        :search_path => [], # $EDITSCRIPT_PATH
+        :search_path => false, # $EDITSCRIPT_PATH
         :options => {
           :show => false, # Show results without executing
           :menu => true, # Don't display a menu, execute/show the highest ranked result
@@ -38,7 +38,7 @@ module EditScript
 
         opt.on("-v", "--version", "Display version and exit") do
           ver = EditScript::VERSION
-          $stdout.puts "#{File.basename(__FILE__)} v#{ver}"
+          $stdout.puts "EditScript v#{ver}"
           EditScript.do_exit
         end
 
@@ -104,7 +104,12 @@ module EditScript
 
       opt_parser.parse!(args)
 
-      config.to_h
+      config.editor ||= ENV['EDITSCRIPT_EDITOR'] ? ENV['EDITSCRIPT_EDITOR'] : ENV['EDITOR'] || 'vim'
+      search_path_fallback = ENV['EDITSCRIPT_PATH'] ? ENV['EDITSCRIPT_PATH'] : "~/scripts:/usr/bin/local:~/bin:~/.bash_it"
+      config.search_path ||= search_path_fallback.split(/:/)
+
+      p config if config.options[:debug]
+      [args, config.to_h]
     end
   end
 end

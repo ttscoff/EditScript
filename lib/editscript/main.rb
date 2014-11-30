@@ -3,22 +3,24 @@
 
 module EditScript
 
+  String.send :include, Term::ANSIColor
+
   def self.search(args)
     @status_code = 0
     @stty_save = `stty -g`.chomp
-    config, input = EditScript::Config.parse(args)
+    input, config = EditScript::Config.parse(args)
     @options = config[:options]
     @editor = config[:editor]
     @search_paths = config[:search_path]
 
-    if input.empty?
+    if input.nil? || input.empty?
       puts "No search term given. Use '#{File.basename(__FILE__)} -h' for help."
       self.do_exit
     else
-      @search_terms = @config[:recent] ? input.join(' ') : input.join('/')
+      @search_terms = @options[:recent] ? input.join(' ') : input.join('/')
     end
 
-    result = run_search
+    result = self.run_search
 
     %x{#{@editor} "#{result}"}
   end
@@ -32,25 +34,25 @@ module EditScript
 
   private
 
-  def run_search
+  def self.run_search
     if @options[:recent]
-      puts "Searching recent files for #{search_terms}" if @options[:debug]
-      recent_search
+      puts "Searching recent files for #{@search_terms}" if @options[:debug]
+      self.recent_search
     end
-    puts "Searching #{search_terms}" if @options[:debug]
-    res = fuzzy_search
+    puts "Searching #{@search_terms}" if @options[:debug]
+    res = self.fuzzy_search
     if @options[:show]
-      show_and_exit(res)
+      self.show_and_exit(res)
     end
 
     unless @options[:menu] # Just execute the top result
-      result = res[0][:path]
+      return res[0][:path]
     else # Show a menu of results
       res = res[0..@options[:limit]] unless @options[:showall] # limit to top 10 results
 
-      trap('INT') { self.do_exit }
+      # trap('INT') { self.do_exit }
 
-      results_menu(res)
+      self.results_menu(res)
       begin
         printf("Type ".green.bold + "q".cyan.bold + " to cancel, enter to edit first option".green.bold,res.length)
         while line = Readline.readline(": ", true)
@@ -61,11 +63,9 @@ module EditScript
           line = line == '' ? 1 : line.to_i
           if (line > 0 && line <= res.length)
             puts res[line - 1][:path] if @options[:debug]
-            result = res[line.to_i - 1][:path]
-            break
+            return res[line.to_i - 1][:path]
           else
             puts "Out of range"
-            results_menu(res)
           end
         end
       rescue Interrupt => e
@@ -74,10 +74,9 @@ module EditScript
         self.do_exit
       end
     end
-    result
   end
 
-  def show_and_exit(res)
+  def self.show_and_exit(res)
     res.each do |match|
       if @options[:nocolor]
         printf("[%09.4f]",match[:score]) if @options[:showscores]
@@ -90,9 +89,9 @@ module EditScript
     self.do_exit
   end
 
-  def recent_search
+  def self.recent_search
     scores = @options[:showscores] ? "" : "l"
-    list = %x{fasd -#{scores}ftR #{search_terms}}.split(/\n/)
+    list = %x{fasd -#{scores}ftR #{@search_terms}}.split(/\n/)
     unless @options[:only].empty?
       only_pattern = @options[:only].join("|")
       list.delete_if {|l| l =~ /(#{only_pattern})$/ }
@@ -123,10 +122,10 @@ module EditScript
     end
   end
 
-  def fuzzy_search
+  def self.fuzzy_search
     finder = FuzzyFileFinder.new(@search_paths)
 
-    res = finder.find(search_terms).delete_if { |file|
+    res = finder.find(@search_terms).delete_if { |file|
       %x{file "#{file[:path]}"}.chomp !~ /text/
     }
 
@@ -147,7 +146,7 @@ module EditScript
     res
   end
 
-  def results_menu(res)
+  def self.results_menu(res)
     counter = 1
     puts
     res.each do |match|
@@ -166,6 +165,3 @@ module EditScript
   end
 
 end
-
-
-EditScript.search(ARGV)

@@ -115,7 +115,7 @@ module EditScript
         choices.map! {|c| c.white.bold } unless @options[:nocolor]
         puts choices
       else
-        res = exec "$EDITOR $(echo #{Shellwords.escape(choices.join("\n"))}|fzf -m +c -1)"
+        res = exec "#{@editor} $(echo #{Shellwords.escape(choices.join("\n"))}|fzf -m +c -1)"
         @status_code = res ? 1 : 0
       end
       exit
@@ -139,7 +139,7 @@ module EditScript
       }.reverse
     else
       if @options[:open_single]
-        res = exec %Q{#{editor} "#{res[0][:path]}"}
+        res = exec %Q{#{@editor} "#{res[0][:path]}"}
         do_exit res ? 1 : 0
       end
     end

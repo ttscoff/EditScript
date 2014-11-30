@@ -1,0 +1,5 @@
+pkg
+html
+*.gem
+Gemfile.lock
+*.sublime*

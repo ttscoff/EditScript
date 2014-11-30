@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+require 'editscript'
+
+if RUBY_VERSION.to_f > 1.9
+  Encoding.default_external = Encoding::UTF_8
+  Encoding.default_internal = Encoding::UTF_8
+end
+
+eds = EditScript.new
+
+at_exit { eds.do_exit(stty_save) }
+
+eds::Config.configure(ARGV, STDIN)
+
+eds = EditScript.new(ARGV, STDIN)
+eds.run

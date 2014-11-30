@@ -1,0 +1,13 @@
+.autotest
+Manifest.txt
+History.txt
+README.md
+README.txt
+bin/editscript
+lib/editscript.completion.bash
+lib/editscript.rb
+lib/editscript/config.rb
+lib/editscript/execavailable.rb
+lib/editscript/main.rb
+lib/editscript/version.rb
+test/editscript_test.rb

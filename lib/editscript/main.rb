@@ -5,6 +5,9 @@ module EditScript
 
   String.send :include, Term::ANSIColor
 
+  [Array, String].map {|c| c.send :include, ScriptingTools::ExecAvailable }
+
+
   def self.search(args)
     @status_code = 0
     @stty_save = `stty -g`.chomp

@@ -18,12 +18,17 @@ end
 desc 'Install the gem in the current ruby'
 task :install, :all do |t, args|
   args.with_defaults(:all => false)
-  if args[:all]
+  if args[:all] != FalseClass
     sh "rvm all do gem install pkg/*.gem"
-    sh "sudo gem intsall pkg/*.gem"
+    sh "sudo gem install pkg/*.gem"
   else
     sh "gem install pkg/*.gem"
   end
+end
+
+desc 'Install the gem in the all rubies'
+task :installall do |t, args|
+  Rake::Task[:install].invoke(true)
 end
 
 desc 'Development version check'
@@ -62,6 +67,20 @@ task :bump, :type do |t, args|
     f.puts content
   }
 end
+
+def alias_task(tasks)
+    tasks.each do |new_name, old_name|
+        task new_name, [*Rake.application[old_name].arg_names] => [old_name]
+    end
+end
+
+alias_task [
+    [:i, :install],
+    [:ia, :installall],
+    [:p, :package],
+    [:c, :clobber]
+]
+
 
 task :build => [:package]
 task :default => [:clobber,:rdoc,:package]

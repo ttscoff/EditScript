@@ -16,7 +16,7 @@ module EditScript
     @editor = config[:editor]
     @search_paths = config[:search_path]
 
-    if input.nil? || input.empty?
+    if (input.nil? || input.empty?) && !@options[:recent]
       puts "No search term given. Use '#{File.basename(__FILE__)} -h' for help."
       self.do_exit
     else
@@ -97,7 +97,9 @@ module EditScript
     list = %x{fasd -#{scores}ftR #{@search_terms}}.split(/\n/)
     unless @options[:only].empty?
       only_pattern = @options[:only].join("|")
-      list.delete_if {|l| l =~ /(#{only_pattern})$/ }
+      list.delete_if {|l|
+        l !~ /(#{only_pattern})$/
+      }
     end
     choices = []
     @search_paths.map! {|path| File.expand_path(path) }
@@ -126,7 +128,7 @@ module EditScript
   end
 
   def self.fuzzy_search
-    finder = FuzzyFileFinder.new(@search_paths)
+    finder = FuzzyFileFinder.new(@search_paths,50000)
 
     res = finder.find(@search_terms).delete_if { |file|
       %x{file "#{file[:path]}"}.chomp !~ /text/
@@ -137,6 +139,12 @@ module EditScript
       $code = 1
       exit
     elsif res.length > 1
+      unless @options[:only].empty?
+        only_pattern = @options[:only].join("|")
+        res.delete_if {|l|
+          l[:path] !~ /(#{only_pattern})$/
+        }
+      end
       res = res.sort {|a,b|
         a[:score] <=> b[:score]
       }.reverse

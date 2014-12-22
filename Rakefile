@@ -84,3 +84,4 @@ alias_task [
 
 task :build => [:package]
 task :default => [:clobber,:rdoc,:package]
+task :gobig => [:default,:installall]

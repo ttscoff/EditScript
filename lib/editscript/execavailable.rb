@@ -26,7 +26,7 @@ module ScriptingTools
       missed = []
       bins.each do |b|
         `type -t #{b}`
-        $CHILD_STATUS == 0 ? matched.push(b) : missed.push(b)
+        $CHILD_STATUS.to_i == 0 ? matched.push(b) : missed.push(b)
       end
       # found == bins.length
       [matched.length == bins.length, missed]

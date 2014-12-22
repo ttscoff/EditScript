@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.homepage = 'http://brettterpstra.com/'
   s.platform = Gem::Platform::RUBY
   s.summary = 'A fuzzy search and execute tool for people who write too many scripts'
+  s.description = 'EditScript allows you to search through predefined folders or recently-accessed files for scripts with fuzzy matching in path names.'
   s.license = 'MIT'
 
   s.files         = `git ls-files -z`.split("\x0")
@@ -23,9 +24,10 @@ Gem::Specification.new do |s|
   s.bindir = 'bin'
 
   s.add_development_dependency "bundler", "~> 1.6"
-  s.add_development_dependency "rake"
+  s.add_development_dependency 'rake', '~> 0'
   s.add_development_dependency 'rdoc', '~> 4.1', '>= 4.1.1'
-  s.add_runtime_dependency 'term-ansicolor', '~> 1.3.0'
-  s.add_runtime_dependency 'fuzzy_file_finder', '~> 1.0.4'
-  s.add_development_dependency 'aruba'
+  s.add_runtime_dependency 'term-ansicolor', '~> 1.3', '>= 1.3.0'
+  s.add_runtime_dependency 'fuzzy_file_finder', '~> 1.0', '>= 1.0.4'
+  s.add_development_dependency 'aruba', '~> 0'
+
 end

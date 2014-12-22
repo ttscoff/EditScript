@@ -9,6 +9,8 @@ Results are ranked and a menu is displayed with the most likely
 match at the top. Editor to be launched and directories to search
 specified in CONFIG below.
 
+EditScript is designed to work with a shallow set of configured search paths. I tend to keep most of my work in ~/scripts, ~/bin, and a couple of project folders. Search paths can be defined in your shell environment with $EDITSCRIPT\_PATH. You can also set default file extension constraints with $EDITSCRIPT\_TYPES. The file finder that EditScript uses will choke on results with upwards of about 5000 matches. It's not designed for deep traversal or handling large repositories.
+
 ### Author
 
 Brett Terpstra

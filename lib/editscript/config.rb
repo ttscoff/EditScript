@@ -2,6 +2,14 @@ require 'optparse'
 require 'optparse/time'
 require 'ostruct'
 
+unless OpenStruct.method_defined? :to_h
+  class OpenStruct
+    def to_h
+      self.marshal_dump
+    end
+  end
+end
+
 module EditScript
   class Config
 
@@ -9,7 +17,9 @@ module EditScript
       defaults = {
         :editor => false, # $EDITSCRIPT_EDITOR
         :search_path => false, # $EDITSCRIPT_PATH
+        :default_types => false, # $EDITSCRIPT_TYPES
         :options => {
+          :ignore_only => false, # Ignore any file extension constraints
           :show => false, # Show results without executing
           :menu => true, # Don't display a menu, execute/show the highest ranked result
           :only => [], # only show files matching extensions
@@ -80,6 +90,10 @@ module EditScript
           config.options[:only] = exts.split(/\s*,\s*/).map {|e| e.sub(/^\.?/,'')}
         end
 
+        opt.on("-O", "Ignore any file extension limits in config, environment variables, or arguments") do
+          config.options[:ignore_only] = true
+        end
+
         opt.on("-n","--no-menu","No menu interaction. Executes the highest ranked result or, with '-s', returns a plain list of results") do |menu|
           config.options[:menu] = false
         end
@@ -105,6 +119,7 @@ module EditScript
       opt_parser.parse!(args)
 
       config.editor ||= ENV['EDITSCRIPT_EDITOR'] ? ENV['EDITSCRIPT_EDITOR'] : ENV['EDITOR'] || 'vim'
+      config.default_types ||= ENV['EDITSCRIPT_TYPES'] ? ENV['EDITSCRIPT_TYPES'].split(/\s*,\s*/) : []
       search_path_fallback = ENV['EDITSCRIPT_PATH'] ? ENV['EDITSCRIPT_PATH'] : "~/scripts:/usr/bin/local:~/bin:~/.bash_it"
       config.search_path ||= search_path_fallback.split(/:/)
 

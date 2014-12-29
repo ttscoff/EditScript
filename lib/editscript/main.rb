@@ -7,7 +7,6 @@ module EditScript
 
   [Array, String].map {|c| c.send :include, ScriptingTools::ExecAvailable }
 
-
   def self.search(args)
     @status_code = 0
     @stty_save = `stty -g`.chomp
@@ -20,7 +19,13 @@ module EditScript
       puts "No search term given. Use '#{File.basename(__FILE__)} -h' for help."
       self.do_exit
     else
-      @search_terms = @options[:recent] ? input.join(' ') : input.join('/')
+      if @options[:recent]
+        @search_terms = input.join(' ')
+      elsif @options[:function_search]
+        @search_terms = input.map {|i| Shellwords.escape(i) }.join('|')
+      else
+        @search_terms = input.join('/')
+      end
     end
 
     result = self.run_search
@@ -42,8 +47,13 @@ module EditScript
       puts "Searching recent files for #{@search_terms}" if @options[:debug]
       self.recent_search
     end
-    puts "Searching #{@search_terms}" if @options[:debug]
-    res = self.fuzzy_search
+    if @options[:function_search]
+      puts "Searching for #{@search_terms} in functions and aliases" if @options[:debug]
+      res = self.function_search
+    else
+      puts "Searching #{@search_terms}" if @options[:debug]
+      res = self.fuzzy_search
+    end
     if @options[:show]
       self.show_and_exit(res)
     end
@@ -55,7 +65,7 @@ module EditScript
 
       # trap('INT') { self.do_exit }
 
-      self.results_menu(res)
+      self.results_menu(res,!@options[:function_search])
       begin
         printf("Type ".green.bold + "q".cyan.bold + " to cancel, enter to edit first option".green.bold,res.length)
         while line = Readline.readline(": ", true)
@@ -65,8 +75,8 @@ module EditScript
           end
           line = line == '' ? 1 : line.to_i
           if (line > 0 && line <= res.length)
-            puts res[line - 1][:path] if @options[:debug]
-            return res[line.to_i - 1][:path]
+            puts @options[:function_search] ? res[line - 1] : res[line - 1][:path] if @options[:debug]
+            return @options[:function_search] ? res[line - 1] : res[line - 1][:path]
           else
             puts "Out of range"
           end
@@ -157,12 +167,46 @@ module EditScript
     res
   end
 
-  def self.results_menu(res)
+  def self.function_search
+    search_glob = "{#{@search_paths.join(',')}}"
+    if "ag".bins_available?
+      cmd = %q{ag --nocolor -l '(^| |\.)((%s)\S+\s*\(|(def|function|alias) (%s))' %s} % [@search_terms, @search_terms, search_glob]
+    else
+      cmd = %q{grep --color=never -liIRE '(^| |\.)((%s)\S+\s*\(|(def|function|alias) (%s))' %s} % [@search_terms, @search_terms, search_glob]
+    end
+
+    res = %x{#{cmd}}.split(/\n/).map {|i| i.strip }
+
+    if res.length == 0
+      puts "No matching files".red.bold
+      $code = 1
+      exit
+    elsif res.length > 1
+      unless @options[:only].empty?
+        only_pattern = @options[:only].join("|")
+        res.delete_if {|l|
+          l !~ /(#{only_pattern})$/
+        }
+      end
+    else
+      if @options[:open_single]
+        res = exec %Q{#{@editor} "#{res[0][:path]}"}
+        do_exit res ? 1 : 0
+      end
+    end
+    res
+  end
+
+  def self.results_menu(res,fuzzy=true)
     counter = 1
     puts
     res.each do |match|
-      display = @options[:debug] ? match[:highlighted_path] : match[:path]
-      if @options[:showscores]
+      if fuzzy
+        display = @options[:debug] ? match[:highlighted_path] : match[:path]
+      else
+        display = match
+      end
+      if @options[:showscores] && fuzzy
         printf("%2d ) ".cyan.bold, counter)
         printf("[%09.4f]".dark.white, match[:score])
         printf(" %s\n".white.bold, display)

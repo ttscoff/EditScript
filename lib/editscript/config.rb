@@ -28,6 +28,7 @@ module EditScript
           :showscores => false, # Show match scoring with results
           :debug => false, # Verbose debugging
           :recent => false,
+          :function_search => false,
           :open_single => false,
           :nocolor => false
         }
@@ -72,6 +73,10 @@ module EditScript
               EditScript.do_exit
             end
           end
+        end
+
+        opt.on("-f","--function","Use grep (or silver_searcher if available) to search for files containing functions and aliases matching terms") do
+          config.options[:function_search] = true
         end
 
         opt.on("-1","--open_single","If there's only a single match, open it immediately") do

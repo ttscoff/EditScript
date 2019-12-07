@@ -18,14 +18,13 @@ Gem::Specification.new do |s|
   s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.test_files    = s.files.grep(%r{^(test|spec|features)/})
   s.require_paths = ["lib"]
-  s.has_rdoc = true
   s.extra_rdoc_files = ['README.md']
   s.rdoc_options << '--title' << 'editscript' << '--main' << 'README.md' << '--markup' << 'markdown' << '-ri'
   s.bindir = 'bin'
 
   s.add_development_dependency "bundler", "~> 1.6"
   s.add_development_dependency 'rake', '~> 0'
-  s.add_development_dependency 'rdoc', '~> 4.1', '>= 4.1.1'
+  s.add_development_dependency 'rdoc', '~> 6.2', '>= 6.2.0'
   s.add_runtime_dependency 'term-ansicolor', '~> 1.3', '>= 1.3.0'
   s.add_runtime_dependency 'fuzzy_file_finder', '~> 1.0', '>= 1.0.4'
   s.add_development_dependency 'aruba', '~> 0'

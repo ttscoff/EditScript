@@ -112,10 +112,17 @@ module EditScript
       }
     end
     choices = []
-    @search_paths.map! {|path| File.expand_path(path) }
+    patterns = []
+    @search_paths.each {|path|
+      if path =~ /[\*\?]/
+        patterns.push(path.sub(/^~/,ENV['HOME']).gsub(/\*+/,'.*').gsub(/\?/,'\S'))
+      else
+        patterns.push(File.expand_path(path))
+      end
+    }
     list.each {|path|
-      @search_paths.each {|s|
-        path.strip!
+      path.strip!
+      patterns.each {|s|
         if path =~ /^#{s}/
           choices.push(path)
           break
@@ -138,11 +145,35 @@ module EditScript
   end
 
   def self.fuzzy_search
-    finder = FuzzyFileFinder.new(@search_paths,50000)
+    paths = []
+    glob_res = []
+    glob_terms = @search_terms.gsub(/\//,'').split('').join('.*')
+    @search_paths.each do |p|
+      if p =~ /[^\*]\*([^\*]|$)/
+        Dir.glob(File.expand_path(p)).each do |m|
+          if m =~ /#{glob_terms}/
+            glob_res << { :path => m, :score => 0.5 }
+          end
+        end
+      elsif p =~ /\*\*/
+        paths.concat(Dir.glob(File.expand_path(p)))
+      else
+        paths.push(File.expand_path(p))
+      end
+    end
+
+
+    glob_res.delete_if { |file|
+      %x{file "#{file[:path]}"}.chomp !~ /text/
+    }
+
+    finder = FuzzyFileFinder.new(paths,50000)
 
     res = finder.find(@search_terms).delete_if { |file|
       %x{file "#{file[:path]}"}.chomp !~ /text/
     }
+
+    res.concat(glob_res)
 
     if res.length == 0
       puts "No matching files".red.bold
@@ -151,9 +182,12 @@ module EditScript
     elsif res.length > 1
       unless @options[:only].empty?
         only_pattern = @options[:only].join("|")
-        res.delete_if {|l|
-          l[:path] !~ /(#{only_pattern})$/
-        }
+        res.delete_if {|l| l[:path] !~ /(#{only_pattern})$/ }
+      end
+      if res.length == 0
+        puts "No matches"
+        $code = 1
+        exit
       end
       res = res.sort {|a,b|
         a[:score] <=> b[:score]

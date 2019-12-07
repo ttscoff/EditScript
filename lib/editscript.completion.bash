@@ -2,7 +2,7 @@ function _complete_editscript()
 {
 	local word=${COMP_WORDS[COMP_CWORD]}
 	if [[ -n $word ]]; then
-		COMPREPLY=( $(editscript -s --no_color $word | xargs basename | sed -e 's/ /\ /') )
+		COMPREPLY=( $(editscript -s --nocolor $word | xargs basename | sed -e 's/ /\ /') )
 	else
 		COMPREPLY=()
 	fi

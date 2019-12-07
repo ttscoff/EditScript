@@ -12,7 +12,7 @@ end
 
 module EditScript
   class Config
-
+    # TODO: Add an rc file option in addition to environment variables
     def self.parse(args)
       defaults = {
         :editor => false, # $EDITSCRIPT_EDITOR
@@ -22,7 +22,7 @@ module EditScript
           :ignore_only => false, # Ignore any file extension constraints
           :show => false, # Show results without executing
           :menu => true, # Don't display a menu, execute/show the highest ranked result
-          :only => [], # only show files matching extensions
+          :only => ENV['EDITSCRIPT_TYPES'] ? self.build_type_pattern(ENV['EDITSCRIPT_TYPES']) : [], # only show files matching extensions
           :showall => false, # Show all results, otherwise limited to top 10
           :limit => 10,
           :showscores => false, # Show match scoring with results
@@ -87,12 +87,12 @@ module EditScript
           config.options[:show] = true
         end
 
-        opt.on("--no_color","Supress color output on --show command") do
+        opt.on("--nocolor","Supress color output on --show command") do
           config.options[:nocolor] = true
         end
 
         opt.on("-o","--only [EXTENSIONS]","Only accept files with these extensions (comma-separated). To include files with no extension, use an extra comm, e.g. '-o ,' or '-o py,rb,,'") do |exts|
-          config.options[:only] = exts.split(/\s*,\s*/).map {|e| e.sub(/^\.?/,'')}
+          config.options[:only] = build_type_pattern(exts)
         end
 
         opt.on("-O", "Ignore any file extension limits in config, environment variables, or arguments") do
@@ -124,12 +124,22 @@ module EditScript
       opt_parser.parse!(args)
 
       config.editor ||= ENV['EDITSCRIPT_EDITOR'] ? ENV['EDITSCRIPT_EDITOR'] : ENV['EDITOR'] || 'vim'
-      config.default_types ||= ENV['EDITSCRIPT_TYPES'] ? ENV['EDITSCRIPT_TYPES'].split(/\s*,\s*/) : []
-      search_path_fallback = ENV['EDITSCRIPT_PATH'] ? ENV['EDITSCRIPT_PATH'] : "~/scripts:/usr/bin/local:~/bin:~/.bash_it"
+      search_path_fallback = ENV['EDITSCRIPT_PATH'] ? ENV['EDITSCRIPT_PATH'] : ENV['HOME']
       config.search_path ||= search_path_fallback.split(/:/)
 
       p config if config.options[:debug]
       [args, config.to_h]
+    end
+
+    private
+
+    def self.build_type_pattern(string)
+      exts = string.dup
+      patterns = []
+      patterns.push("^.*?\/\\.?[^\\.]+") if exts =~ /(,,|,$)/
+      exts.gsub!(/ *,+ */,',')
+      exts.split(/,/).each {|e| patterns.push("\\." + e.sub(/^\./,'')) }
+      patterns
     end
   end
 end
